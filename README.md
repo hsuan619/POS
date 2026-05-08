@@ -31,6 +31,16 @@ cd pos-backend && npm run dev
 cd pos-frontend && npm run dev
 ```
 
+<img width="1086" height="810" alt="image" src="https://github.com/user-attachments/assets/b3726ebd-1991-4cf1-904c-ac0f08c4ba3e" />
+<img width="1086" height="814" alt="image" src="https://github.com/user-attachments/assets/29eb9d25-4163-4fd8-9a75-8113e9546a0c" />
+<img width="1086" height="810" alt="image" src="https://github.com/user-attachments/assets/327ec942-9d14-4c33-97c9-0783282551aa" />
+<img width="1080" height="808" alt="image" src="https://github.com/user-attachments/assets/7feac59c-781f-496b-afa1-09f5b3d4c9ad" />
+<img width="1086" height="810" alt="image" src="https://github.com/user-attachments/assets/6f6bf15c-3758-443c-96c0-a7fd3219a6c3" />
+<img width="1087" height="814" alt="image" src="https://github.com/user-attachments/assets/64680d87-5dd5-4ca9-9c65-b5ed3fc9b38a" />
+<img width="1086" height="810" alt="image" src="https://github.com/user-attachments/assets/6c36004b-1fe1-43f4-97bb-4bde9dc55d82" />
+
+
+
 ---
 
 ## 前端架構
