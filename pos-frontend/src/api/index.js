@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const http = axios.create({ baseURL: 'http://localhost:3000/api' })
+const http = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api' })
 
 // ── 正規化：讓後端格式符合前端元件期望的欄位名 ──────────────────
 function normalizeProduct(p) {
