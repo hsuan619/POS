@@ -628,7 +628,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   width: 32px; height: 32px;
   border-radius: 50%;
   font-size: 16px;
-  color: rgba(245,241,231,0.6);
+  color: #29261b;
   display: grid; place-items: center;
   transition: background 0.12s, color 0.12s;
 }
