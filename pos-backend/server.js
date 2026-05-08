@@ -8,11 +8,29 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-app.use('/api/products',  require('./routes/products'))
-app.use('/api/orders',    require('./routes/orders'))
-app.use('/api/reports',   require('./routes/reports'))
-app.use('/api/purchases', require('./routes/purchases'))
-app.use('/api/expenses',  require('./routes/expenses'))
+// ── Auth ──────────────────────────────────────────────────────────────
+app.post('/api/auth/login', (req, res) => {
+  const { password } = req.body
+  if (!password || password !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: '密碼錯誤' })
+  }
+  res.json({ token: process.env.ADMIN_TOKEN })
+})
+
+function requireAuth(req, res, next) {
+  const auth = req.headers.authorization || ''
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+  if (!token || token !== process.env.ADMIN_TOKEN) {
+    return res.status(401).json({ error: '未授權' })
+  }
+  next()
+}
+
+app.use('/api/products',  requireAuth, require('./routes/products'))
+app.use('/api/orders',    requireAuth, require('./routes/orders'))
+app.use('/api/reports',   requireAuth, require('./routes/reports'))
+app.use('/api/purchases', requireAuth, require('./routes/purchases'))
+app.use('/api/expenses',  requireAuth, require('./routes/expenses'))
 
 app.use((err, req, res, next) => {
   console.error(err)

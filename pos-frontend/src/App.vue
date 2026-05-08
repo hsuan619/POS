@@ -1,13 +1,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { CATEGORIES, INGREDIENTS, MODIFIER_RULES } from './data/seed.js'
-import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchOrders, createOrder, refundOrder } from './api/index.js'
+import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchOrders, createOrder, refundOrder, getToken, clearToken } from './api/index.js'
 import OrderScreen    from './components/OrderScreen.vue'
 import HistoryScreen  from './components/HistoryScreen.vue'
 import ReportScreen   from './components/ReportScreen.vue'
 import ProductsScreen    from './components/ProductsScreen.vue'
 import AccountingScreen from './components/AccountingScreen.vue'
+import LoginScreen    from './components/LoginScreen.vue'
 
+const authed   = ref(!!getToken())
 const view     = ref('order')
 const products = ref([])
 const orders   = ref([])
@@ -21,14 +23,32 @@ const NAV = [
   { id: 'accounting', label: '帳務', icon: '¥' },
 ]
 
-onMounted(async () => {
+async function loadData() {
+  loading.value = true
   try {
     const [prods, ords] = await Promise.all([fetchProducts(), fetchOrders()])
     products.value = prods
     orders.value   = ords
+  } catch {
+    authed.value = false
   } finally {
     loading.value = false
   }
+}
+
+function handleLoginSuccess() {
+  authed.value = true
+  loadData()
+}
+
+function handleLogout() {
+  clearToken()
+  authed.value = false
+}
+
+onMounted(() => {
+  if (authed.value) loadData()
+  else loading.value = false
 })
 
 // ── 結帳：將購物車完整資料寫入後端 ──────────────────────────────
@@ -95,7 +115,9 @@ async function handleRefund(mongoId) {
 </script>
 
 <template>
-  <div class="app app-pill">
+  <LoginScreen v-if="!authed" @success="handleLoginSuccess" />
+
+  <div v-else class="app app-pill">
     <header class="topnav">
       <div class="topnav-brand">
         <div class="brand-mark">圓</div>
@@ -124,6 +146,7 @@ async function handleRefund(mongoId) {
           <div class="user-name">阿芳</div>
           <div class="user-role">店長 · 09:00–17:00</div>
         </div>
+        <button class="logout-btn" @click="handleLogout" title="登出">⏻</button>
       </div>
     </header>
 

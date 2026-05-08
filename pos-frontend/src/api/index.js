@@ -2,6 +2,30 @@ import axios from 'axios'
 
 const http = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api' })
 
+const TOKEN_KEY = 'pos_token'
+export const getToken  = ()      => localStorage.getItem(TOKEN_KEY)
+export const setToken  = (t)     => localStorage.setItem(TOKEN_KEY, t)
+export const clearToken = ()     => localStorage.removeItem(TOKEN_KEY)
+
+http.interceptors.request.use(cfg => {
+  const t = getToken()
+  if (t) cfg.headers.Authorization = `Bearer ${t}`
+  return cfg
+})
+
+http.interceptors.response.use(
+  r => r,
+  err => {
+    if (err.response?.status === 401) clearToken()
+    return Promise.reject(err)
+  }
+)
+
+export async function login(password) {
+  const { data } = await http.post('/auth/login', { password })
+  setToken(data.token)
+}
+
 // ── 正規化：讓後端格式符合前端元件期望的欄位名 ──────────────────
 function normalizeProduct(p) {
   return { ...p, id: p._id }
