@@ -82,6 +82,22 @@ export async function deleteExpense(id) {
   await http.delete(`/expenses/${id}`)
 }
 
+// ── Reports ──────────────────────────────────────────────────────────
+export async function fetchDailyDetail(params) {
+  const { data } = await http.get('/reports/daily-detail', { params })
+  return data
+}
+
+export async function fetchMonthlyReport(params) {
+  const { data } = await http.get('/reports/monthly', { params })
+  return data
+}
+
+export async function fetchQuarterlyReport(params) {
+  const { data } = await http.get('/reports/quarterly', { params })
+  return data
+}
+
 // ── Orders ───────────────────────────────────────────────────────────
 export async function fetchOrders(params) {
   const { data } = await http.get('/orders', { params })
