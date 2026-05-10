@@ -622,6 +622,75 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .lg-btn:hover:not(:disabled) { background: var(--accent-2); }
 .lg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── RESPONSIVE: iPad 7 landscape (1024×768) ── */
+@media (max-width: 1024px) {
+
+  /* Fix: app-content height:100% + flex:1 在小螢幕會撐超 viewport */
+  .app-content { height: unset; }
+
+  /* Topnav */
+  .topnav { padding: 6px 12px; gap: 10px; }
+  .brand-mark { width: 30px; height: 30px; font-size: 14px; border-radius: 7px; }
+  .brand-name { font-size: 12px; }
+  .brand-sub  { display: none; }
+  .pill { padding: 6px 10px; font-size: 13px; }
+  .pill-icon  { display: none; }
+  .user-avatar { width: 26px; height: 26px; font-size: 10px; }
+  .user-name  { font-size: 11px; }
+  .user-role  { display: none; }
+
+  /* Order screen – 縮短總寬，減少 cart */
+  .order-screen { grid-template-columns: 1fr 268px; }
+
+  /* Menu pane */
+  .menu-pane { padding: 10px 12px 0; }
+  .menu-title h1 { font-size: 17px; }
+  .menu-header { margin-bottom: 8px; }
+  .menu-search { width: 160px; height: 32px; font-size: 13px; }
+  .cat-tab { font-size: 13px; padding: 5px 10px; }
+  .cat-tabs { padding-bottom: 10px; margin-bottom: 2px; gap: 4px; }
+  .drink-card { padding: 10px; gap: 6px; }
+  .drink-name { font-size: 18px; }
+  .drink-en   { font-size: 13px; margin-top: 1px; }
+  .price-num  { font-size: 18px; }
+  .price-currency { font-size: 13px; }
+  .drink-add  { width: 22px; height: 22px; font-size: 11px; }
+  .drink-bottom { margin-top: 6px; padding-top: 6px; }
+  .menu-grid  { gap: 8px; }
+
+  /* Cart pane */
+  .cart-header { padding: 8px 12px 6px; }
+  .cart-title  { font-size: 15px; }
+  .cart-sub    { font-size: 11px; }
+  .cart-type   { padding: 6px 12px 0; }
+  .type-btn    { font-size: 12px; padding: 5px 0; }
+  .cart-lines  { padding: 6px 12px; gap: 6px; }
+  .cart-line   { padding: 7px; gap: 7px; }
+  .line-name   { font-size: 14px; }
+  .mod-summary { font-size: 11px; }
+  .line-note   { font-size: 10px; }
+  .line-price  { font-size: 13px; }
+  .line-bot    { margin-top: 5px; }
+  .line-qty    { padding: 1px; gap: 4px; }
+  .line-qty button { width: 18px; height: 18px; }
+  .line-qty span   { font-size: 12px; min-width: 14px; }
+  .line-x      { width: 22px; height: 22px; font-size: 13px; }
+  .cart-totals { padding: 6px 12px; gap: 3px; }
+  .total-row   { font-size: 12px; }
+  .total-row.total-grand { font-size: 18px; margin-top: 3px; padding-top: 5px; }
+  .discount-row select { font-size: 12px; padding: 1px 4px; }
+  .btn-checkout { height: 42px; font-size: 15px; margin: 0 12px 12px; border-radius: 8px; }
+
+  /* Modals */
+  .pay-modal     { width: min(620px, 92vw); padding: 18px; gap: 12px; }
+  .pay-amount    { font-size: 48px; }
+  .pay-eyebrow   { font-size: 16px; }
+  .mod-modal     { width: min(580px, 92vw); }
+  .confirm-modal { width: min(420px, 92vw); max-height: 86vh; }
+  .edit-modal    { width: min(680px, 92vw); }
+  .btn-done      { height: 50px; font-size: 19px; margin: 10px 18px 16px; }
+}
+
 /* ── LOGOUT BUTTON ── */
 .logout-btn {
   margin-left: 10px;
