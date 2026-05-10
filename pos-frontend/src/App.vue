@@ -9,8 +9,9 @@ import ProductsScreen    from './components/ProductsScreen.vue'
 import AccountingScreen from './components/AccountingScreen.vue'
 import LoginScreen    from './components/LoginScreen.vue'
 
-const authed   = ref(!!getToken())
-const view     = ref('order')
+const authed      = ref(!!getToken())
+const view        = ref('order')
+const drawerOpen  = ref(false)
 const products = ref([])
 const orders   = ref([])
 const loading  = ref(true)
@@ -149,6 +150,44 @@ async function handleRefund(mongoId) {
         <button class="logout-btn" @click="handleLogout" title="登出">⏻</button>
       </div>
     </header>
+
+    <!-- 漢堡按鈕（僅小螢幕顯示） -->
+    <button class="hamburger-btn" @click="drawerOpen = true">☰</button>
+
+    <!-- Drawer backdrop -->
+    <div v-if="drawerOpen" class="drawer-backdrop" @click="drawerOpen = false" />
+
+    <!-- Drawer sidebar -->
+    <nav class="drawer" :class="{ 'drawer--open': drawerOpen }">
+      <div class="drawer-head">
+        <div class="brand-mark">圓</div>
+        <div>
+          <div class="brand-name">巷口湯圓</div>
+          <div class="brand-sub">POS 系統</div>
+        </div>
+        <button class="drawer-close" @click="drawerOpen = false">✕</button>
+      </div>
+      <div class="drawer-nav">
+        <button
+          v-for="n in NAV"
+          :key="n.id"
+          class="drawer-nav-btn"
+          :class="{ active: view === n.id }"
+          @click="view = n.id; drawerOpen = false"
+        >
+          <span class="nav-icon">{{ n.icon }}</span>
+          <span>{{ n.label }}</span>
+        </button>
+      </div>
+      <div class="drawer-user">
+        <div class="user-avatar">阿</div>
+        <div>
+          <div class="user-name">阿芳</div>
+          <div class="user-role">店長 · 09:00–17:00</div>
+        </div>
+        <button class="logout-btn" @click="handleLogout">⏻</button>
+      </div>
+    </nav>
 
     <div class="app-content">
       <div v-if="loading" class="empty" style="height:100%">
