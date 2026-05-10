@@ -56,7 +56,7 @@ function bumpUpgrade(delta) {
 // ── 包餡湯圓口味 ─────────────────────────────────────────────────────
 const descBobaCount = computed(() => props.product.modifierProfile?.bobaCount ?? 0)
 
-const totalBobaSlots = computed(() => descBobaCount.value + upgradedBobas.value)
+const totalBobaSlots = computed(() => descBobaCount.value + upgradedBobas.value * 2)
 const showBobaFlavor = computed(() => totalBobaSlots.value > 0)
 
 const bobaFlavorHistory = ref([])
@@ -200,7 +200,7 @@ function handleAdd() {
         <div v-if="canUpgrade" class="mod-group">
           <div class="mod-group-head">
             <span class="mod-group-label">升級包餡湯圓</span>
-            <span class="mod-hint">每 1 顆佔 1 個選料 slot，+${{ rules.upgradeBoba }}</span>
+            <span class="mod-hint">每 1 份可選 2 種口味，+${{ rules.upgradeBoba }}</span>
           </div>
           <div class="upgrade-row">
             <div class="qty-stepper">
@@ -211,7 +211,7 @@ function handleAdd() {
             <span class="upgrade-label">
               <template v-if="upgradedBobas === 0">不升級</template>
               <template v-else>
-                包餡湯圓 × {{ upgradedBobas }} 顆
+                包餡湯圓 × {{ upgradedBobas }} 份
                 <span class="upgrade-cost">+${{ upgradedBobas * rules.upgradeBoba }}</span>
               </template>
             </span>
