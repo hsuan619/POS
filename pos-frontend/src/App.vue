@@ -160,6 +160,7 @@ async function handleRefund(mongoId) {
         <OrderScreen
           v-if="view === 'order'"
           :products="products"
+          :orders="orders"
           :categories="CATEGORIES"
           :ingredients="INGREDIENTS"
           :rules="MODIFIER_RULES"

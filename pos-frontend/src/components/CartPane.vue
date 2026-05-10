@@ -4,7 +4,8 @@ import PaymentModal from './PaymentModal.vue'
 import OrderConfirmModal from './OrderConfirmModal.vue'
 
 const props = defineProps({
-  cart: { type: Array, required: true },
+  cart:   { type: Array, required: true },
+  orders: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['update:cart', 'checkout'])
 
@@ -40,6 +41,17 @@ const paying    = ref(false)
 const confirming = ref(false)
 const pendingCheckout = ref(null)
 
+const sessionCount = ref(0)  // 本 session 已送出的單數，API 回來前即時 +1
+
+const nextOrderNo = computed(() => {
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+  const yymmdd = todayStr.slice(2).replace(/-/g, '')
+  const fromDB  = props.orders.filter(o => o.date === todayStr).length
+  const count   = Math.max(fromDB, sessionCount.value)
+  return `ORD-${yymmdd}-${String(count + 1).padStart(4, '0')}`
+})
+
 function handleConfirm(payment) {
   pendingCheckout.value = {
     subtotal:  subtotal.value,
@@ -54,6 +66,7 @@ function handleConfirm(payment) {
 }
 
 function handleDone() {
+  sessionCount.value++
   emit('checkout', pendingCheckout.value)
   pendingCheckout.value = null
   confirming.value = false
@@ -93,8 +106,8 @@ function modSummary(line) {
   return parts.join(' · ') || null
 }
 
-// A short order-number suffix from timestamp
-const orderTag = String(Date.now()).slice(-4)
+const orderTag = computed(() => nextOrderNo.value.slice(-4))
+
 </script>
 
 <template>
@@ -104,7 +117,7 @@ const orderTag = String(Date.now()).slice(-4)
     <header class="cart-header">
       <div>
         <div class="cart-title">當前訂單</div>
-        <div class="cart-sub">#{{ orderTag }} · {{ itemCount }} 份</div>
+        <div class="cart-sub">#{{orderTag  }} · {{ itemCount }} 份</div>
       </div>
       <button v-if="cart.length" class="btn-ghost-sm" @click="clearCart">清空</button>
     </header>
@@ -208,6 +221,7 @@ const orderTag = String(Date.now()).slice(-4)
       :total="pendingCheckout.total"
       :order-type="pendingCheckout.orderType"
       :payment="pendingCheckout.payment"
+      :next-order-no="orderTag"
       @done="handleDone"
     />
 

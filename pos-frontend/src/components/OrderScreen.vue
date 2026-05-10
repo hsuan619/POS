@@ -5,11 +5,12 @@ import ModifierModal from './ModifierModal.vue'
 import CartPane from './CartPane.vue'
 
 const props = defineProps({
-  products:    { type: Array, required: true },
-  categories:  { type: Array, required: true },
-  ingredients: { type: Array, required: true },
+  products:    { type: Array,  required: true },
+  categories:  { type: Array,  required: true },
+  ingredients: { type: Array,  required: true },
   rules:       { type: Object, required: true },
-  cardSize:    { type: String, default: 'large' }, // 'small' | 'medium' | 'large'
+  orders:      { type: Array,  default: () => [] },
+  cardSize:    { type: String, default: 'large' },
 })
 
 const emit = defineEmits(['checkout'])
@@ -45,8 +46,8 @@ function updateCart(newCart) {
   cart.value = newCart
 }
 
-async function handleCheckout(payload) {
-  await emit('checkout', payload)
+function handleCheckout(payload) {
+  emit('checkout', payload)
   cart.value = []
 }
 </script>
@@ -121,6 +122,7 @@ async function handleCheckout(payload) {
     <!-- ── Right: cart ── -->
     <CartPane
       :cart="cart"
+      :orders="orders"
       @update:cart="updateCart"
       @checkout="handleCheckout"
     />

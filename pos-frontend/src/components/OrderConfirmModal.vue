@@ -4,11 +4,11 @@ const props = defineProps({
   total:     { type: Number, required: true },
   orderType: { type: String, required: true },
   payment:   { type: Object, required: true },
+  nextOrderNo: { type: String, default: '' },
 })
 const emit = defineEmits(['done'])
 
 const ORDER_TYPE_LABEL = { takeaway: '外帶', dinein: '內用' }
-const PAY_LABEL        = { cash: '現金', card: '信用卡', linepay: 'LINE Pay', jko: '街口' }
 
 function modSummary(line) {
   const parts = []
@@ -38,7 +38,7 @@ function modSummary(line) {
       <header class="confirm-head">
         <div class="confirm-badge">{{ ORDER_TYPE_LABEL[orderType] }}</div>
         <h2>本單明細</h2>
-        <div class="confirm-pay-label">{{ PAY_LABEL[payment.method] ?? payment.method }}</div>
+        <div class="confirm-pay-label" style="font-size:24px">{{nextOrderNo}}</div>
       </header>
 
       <!-- Items list -->
