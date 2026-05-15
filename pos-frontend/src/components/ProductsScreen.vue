@@ -20,8 +20,13 @@ const draft   = ref(null)
 const editingIngr = ref(null)
 const draftIngr   = ref(null)
 
-const regularList = computed(() => props.ingredients.filter(i => i.group === 'regular'))
-const bobaList    = computed(() => props.ingredients.filter(i => i.group === 'boba'))
+const ingredientsByGroup = computed(() => {
+  const regular = [], boba = []
+  props.ingredients.forEach(i => (i.group === 'boba' ? boba : regular).push(i))
+  return { regular, boba }
+})
+const regularList = computed(() => ingredientsByGroup.value.regular)
+const bobaList    = computed(() => ingredientsByGroup.value.boba)
 
 function openNewIngr(group) {
   editingIngr.value = { isNew: true, id: '', name: '', color: '#caa479', group }

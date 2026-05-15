@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import * as XLSX from 'xlsx'
 import { fetchDailyDetail, fetchMonthlyReport, fetchQuarterlyReport } from '../api/index.js'
 
@@ -44,9 +44,17 @@ async function query() {
   }
 }
 
-function qTotal(key) {
-  return report.value?.months.reduce((s, m) => s + m[key], 0) ?? 0
-}
+const qTotals = computed(() => {
+  const months = report.value?.months
+  if (!months) return {}
+  return months.reduce((acc, m) => {
+    acc.revenue   = (acc.revenue   || 0) + m.revenue
+    acc.purchases = (acc.purchases || 0) + m.purchases
+    acc.expenses  = (acc.expenses  || 0) + m.expenses
+    acc.net       = (acc.net       || 0) + m.net
+    return acc
+  }, {})
+})
 
 function fmt(n) { return (n ?? 0).toLocaleString() }
 
@@ -211,17 +219,17 @@ function exportExcel() {
             <tr>
               <td>營收</td>
               <td class="num" v-for="m in report.months" :key="m.month">${{ fmt(m.revenue) }}</td>
-              <td class="num">${{ fmt(qTotal('revenue')) }}</td>
+              <td class="num">${{ fmt(qTotals.revenue) }}</td>
             </tr>
             <tr>
               <td>進貨成本</td>
               <td class="num" v-for="m in report.months" :key="m.month">${{ fmt(m.purchases) }}</td>
-              <td class="num">${{ fmt(qTotal('purchases')) }}</td>
+              <td class="num">${{ fmt(qTotals.purchases) }}</td>
             </tr>
             <tr>
               <td>其他費用</td>
               <td class="num" v-for="m in report.months" :key="m.month">${{ fmt(m.expenses) }}</td>
-              <td class="num">${{ fmt(qTotal('expenses')) }}</td>
+              <td class="num">${{ fmt(qTotals.expenses) }}</td>
             </tr>
             <tr class="rp-tr-net">
               <td>淨利</td>
@@ -229,8 +237,8 @@ function exportExcel() {
                   :class="m.net >= 0 ? 'rp-pos' : 'rp-neg'">
                 ${{ fmt(m.net) }}
               </td>
-              <td class="num" :class="qTotal('net') >= 0 ? 'rp-pos' : 'rp-neg'">
-                ${{ fmt(qTotal('net')) }}
+              <td class="num" :class="qTotals.net >= 0 ? 'rp-pos' : 'rp-neg'">
+                ${{ fmt(qTotals.net) }}
               </td>
             </tr>
           </tbody>

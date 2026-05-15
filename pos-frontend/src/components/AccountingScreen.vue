@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   fetchPurchases, createPurchase, updatePurchase, deletePurchase,
   fetchExpenses,  createExpense,  updateExpense,  deleteExpense,
@@ -34,8 +34,7 @@ async function loadData() {
   }
 }
 
-onMounted(loadData)
-watch(currentMonth, loadData)
+watch(currentMonth, loadData, { immediate: true })
 
 // ── 統計 ────────────────────────────────────────────────────────────
 const totalPurchase = computed(() => purchases.value.reduce((s, p) => s + p.total, 0))

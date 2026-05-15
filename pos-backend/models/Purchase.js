@@ -16,4 +16,6 @@ const purchaseSchema = new mongoose.Schema({
   note:     { type: String, default: '' },
 }, { timestamps: true })
 
+purchaseSchema.index({ date: 1 })
+
 module.exports = mongoose.model('Purchase', purchaseSchema)

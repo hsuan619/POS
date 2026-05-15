@@ -33,9 +33,11 @@ const cardCols = computed(() =>
   props.cardSize === 'small' ? 4 : props.cardSize === 'large' ? 2 : 3
 )
 
-function countByCat(catId) {
-  return props.products.filter(p => p.cat === catId).length
-}
+const countByCat = computed(() => {
+  const m = {}
+  props.products.forEach(p => { m[p.cat] = (m[p.cat] || 0) + 1 })
+  return m
+})
 
 function addToCart(line) {
   cart.value = [...cart.value, line]
@@ -83,7 +85,7 @@ function handleCheckout(payload) {
           :class="{ active: activeCat === c.id }"
           @click="activeCat = c.id"
         >
-          {{ c.name }} <span class="cat-count">{{ countByCat(c.id) }}</span>
+          {{ c.name }} <span class="cat-count">{{ countByCat[c.id] ?? 0 }}</span>
         </button>
       </nav>
 

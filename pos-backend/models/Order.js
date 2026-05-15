@@ -32,6 +32,9 @@ const orderSchema = new mongoose.Schema({
   status:   { type: String, enum: ['completed', 'refunded'], default: 'completed' },
 }, { timestamps: true })
 
+// createdAt + status 是所有報表查詢的核心，compound index 同時覆蓋排序與 countDocuments
+orderSchema.index({ createdAt: 1, status: 1 })
+
 // 自動產生 orderNo：ORD-YYMMDD-流水號（依當天 DB 內筆數遞增，從 0001 起）
 orderSchema.pre('save', async function () {
   if (this.isNew && !this.orderNo) {

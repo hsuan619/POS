@@ -17,4 +17,7 @@ const productSchema = new mongoose.Schema({
   modifierProfile: { type: modifierProfileSchema, default: () => ({}) },
 }, { timestamps: true })
 
+productSchema.index({ cat: 1 })
+productSchema.index({ isAvailable: 1 })
+
 module.exports = mongoose.model('Product', productSchema)
