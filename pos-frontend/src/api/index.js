@@ -66,6 +66,30 @@ export async function deleteProduct(id) {
   await http.delete(`/products/${id}`)
 }
 
+// ── Ingredients ──────────────────────────────────────────────────────
+function normalizeIngredient(i) {
+  return { ...i, id: i._id }
+}
+
+export async function fetchIngredients() {
+  const { data } = await http.get('/ingredients')
+  return data.map(normalizeIngredient)
+}
+
+export async function createIngredient(payload) {
+  const { data } = await http.post('/ingredients', payload)
+  return normalizeIngredient(data)
+}
+
+export async function updateIngredient(id, payload) {
+  const { data } = await http.put(`/ingredients/${id}`, payload)
+  return normalizeIngredient(data)
+}
+
+export async function deleteIngredient(id) {
+  await http.delete(`/ingredients/${id}`)
+}
+
 // ── Purchases ────────────────────────────────────────────────────────
 export async function fetchPurchases(params) {
   const { data } = await http.get('/purchases', { params })

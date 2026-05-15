@@ -3,15 +3,45 @@ import { ref, computed, watch } from 'vue'
 import DrinkVisual from './DrinkVisual.vue'
 
 const props = defineProps({
-  products:   { type: Array, required: true },
-  categories: { type: Array, required: true },
+  products:    { type: Array, required: true },
+  categories:  { type: Array, required: true },
+  ingredients: { type: Array, required: true },
 })
-const emit = defineEmits(['update:products'])
+const emit = defineEmits(['update:products', 'update:ingredients'])
+
+const section = ref('products')   // 'products' | 'ingredients'
 
 const filter  = ref('all')
 const search  = ref('')
 const editing = ref(null)   // null | product (with optional isNew flag)
 const draft   = ref(null)
+
+// ── 配料管理 state ───────────────────────────────────────────────────
+const editingIngr = ref(null)
+const draftIngr   = ref(null)
+
+const regularList = computed(() => props.ingredients.filter(i => i.group === 'regular'))
+const bobaList    = computed(() => props.ingredients.filter(i => i.group === 'boba'))
+
+function openNewIngr(group) {
+  editingIngr.value = { isNew: true, id: '', name: '', color: '#caa479', group }
+}
+function openEditIngr(i) { editingIngr.value = i }
+
+watch(editingIngr, i => { draftIngr.value = i ? { ...i } : null })
+
+function saveIngr() {
+  const list = draftIngr.value.isNew
+    ? [...props.ingredients, { ...draftIngr.value }]   // keep isNew:true for App.vue to detect
+    : props.ingredients.map(x => x.id === draftIngr.value.id ? draftIngr.value : x)
+  emit('update:ingredients', list)
+  editingIngr.value = null
+}
+
+function deleteIngr(id) {
+  emit('update:ingredients', props.ingredients.filter(x => x.id !== id))
+  editingIngr.value = null
+}
 
 const COLOR_PALETTE = [
   '#7a3f1f','#7d8c4a','#a8a558','#b67e3a','#caa479','#5b3320','#b9a4cf',
@@ -92,62 +122,108 @@ function handleDelete(id) {
     <!-- ── Header ── -->
     <header class="admin-header">
       <div>
-        <h1>商品管理</h1>
-        <p class="admin-sub">管理菜單上的品項、價格與分類</p>
+        <h1>{{ section === 'products' ? '商品管理' : '配料管理' }}</h1>
+        <p class="admin-sub">{{ section === 'products' ? '管理菜單上的品項、價格與分類' : '管理選料與包餡湯圓口味' }}</p>
       </div>
       <div class="admin-actions">
-        <div class="menu-search admin-search">
-          <span class="search-icon">⌕</span>
-          <input v-model="search" placeholder="搜尋商品…" />
+        <div class="admin-tabs">
+          <button class="admin-tab" :class="{ active: section === 'products' }" @click="section = 'products'">商品</button>
+          <button class="admin-tab" :class="{ active: section === 'ingredients' }" @click="section = 'ingredients'">配料</button>
         </div>
-        <button class="btn-primary" @click="openNew">＋ 新增商品</button>
+        <template v-if="section === 'products'">
+          <div class="menu-search admin-search">
+            <span class="search-icon">⌕</span>
+            <input v-model="search" placeholder="搜尋商品…" />
+          </div>
+          <button class="btn-primary" @click="openNew">＋ 新增商品</button>
+        </template>
       </div>
     </header>
 
-    <!-- ── Filter pills ── -->
-    <div class="filter-pills">
-      <button class="filter-pill" :class="{ active: filter === 'all' }" @click="filter = 'all'">
-        全部 <span>{{ products.length }}</span>
-      </button>
-      <button
-        v-for="c in categories" :key="c.id"
-        class="filter-pill" :class="{ active: filter === c.id }"
-        @click="filter = c.id"
-      >{{ c.name }} <span>{{ catCount(c.id) }}</span></button>
-    </div>
-
-    <!-- ── Table ── -->
-    <div class="prod-table">
-      <div class="prod-row prod-head">
-        <div class="prod-c-img"></div>
-        <div>商品名稱</div>
-        <div>分類</div>
-        <div>售價</div>
-        <div>描述</div>
-        <div class="prod-c-act"></div>
+    <!-- ── 商品 section ── -->
+    <template v-if="section === 'products'">
+      <!-- Filter pills -->
+      <div class="filter-pills">
+        <button class="filter-pill" :class="{ active: filter === 'all' }" @click="filter = 'all'">
+          全部 <span>{{ products.length }}</span>
+        </button>
+        <button
+          v-for="c in categories" :key="c.id"
+          class="filter-pill" :class="{ active: filter === c.id }"
+          @click="filter = c.id"
+        >{{ c.name }} <span>{{ catCount(c.id) }}</span></button>
       </div>
 
-      <div class="prod-body">
-        <div v-for="p in filtered" :key="p.id" class="prod-row" @click="openEdit(p)">
-          <div class="prod-c-img"><DrinkVisual :product="p" size="mini" /></div>
-          <div>
-            <div class="prod-name">{{ p.name }}</div>
-            <div class="prod-en">{{ p.en }}</div>
+      <!-- Table -->
+      <div class="prod-table">
+        <div class="prod-row prod-head">
+          <div class="prod-c-img"></div>
+          <div>商品名稱</div>
+          <div>分類</div>
+          <div>售價</div>
+          <div>描述</div>
+          <div class="prod-c-act"></div>
+        </div>
+
+        <div class="prod-body">
+          <div v-for="p in filtered" :key="p.id" class="prod-row" @click="openEdit(p)">
+            <div class="prod-c-img"><DrinkVisual :product="p" size="mini" /></div>
+            <div>
+              <div class="prod-name">{{ p.name }}</div>
+              <div class="prod-en">{{ p.en }}</div>
+            </div>
+            <div><span class="badge badge-neutral">{{ catName(p.cat) }}</span></div>
+            <div class="prod-c-price">${{ p.price }}</div>
+            <div class="prod-c-desc">{{ p.desc }}</div>
+            <div class="prod-c-act">
+              <button class="btn-ghost-sm" @click.stop="openEdit(p)">編輯</button>
+            </div>
           </div>
-          <div><span class="badge badge-neutral">{{ catName(p.cat) }}</span></div>
-          <div class="prod-c-price">${{ p.price }}</div>
-          <div class="prod-c-desc">{{ p.desc }}</div>
-          <div class="prod-c-act">
-            <button class="btn-ghost-sm" @click.stop="openEdit(p)">編輯</button>
+
+          <div v-if="filtered.length === 0" class="empty">
+            <div class="empty-icon">∅</div>
+            <div class="empty-title">沒有符合的商品</div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ── 配料 section ── -->
+    <template v-else>
+      <div class="ingr-screen">
+
+        <div class="ingr-group">
+          <div class="ingr-group-head">
+            <span class="ingr-group-title">一般選料</span>
+            <button class="btn-ghost-sm" @click="openNewIngr('regular')">＋ 新增</button>
+          </div>
+          <div class="ingr-list">
+            <div v-for="i in regularList" :key="i.id" class="ingr-row" @click="openEditIngr(i)">
+              <span class="ingr-dot" :style="{ background: i.color }" />
+              <span class="ingr-name">{{ i.name }}</span>
+              <button class="btn-ghost-sm" @click.stop="openEditIngr(i)">編輯</button>
+            </div>
+            <div v-if="regularList.length === 0" class="ingr-empty">尚無一般選料</div>
           </div>
         </div>
 
-        <div v-if="filtered.length === 0" class="empty">
-          <div class="empty-icon">∅</div>
-          <div class="empty-title">沒有符合的商品</div>
+        <div class="ingr-group">
+          <div class="ingr-group-head">
+            <span class="ingr-group-title">包餡湯圓口味</span>
+            <button class="btn-ghost-sm" @click="openNewIngr('boba')">＋ 新增</button>
+          </div>
+          <div class="ingr-list">
+            <div v-for="i in bobaList" :key="i.id" class="ingr-row" @click="openEditIngr(i)">
+              <span class="ingr-dot" :style="{ background: i.color }" />
+              <span class="ingr-name">{{ i.name }}</span>
+              <button class="btn-ghost-sm" @click.stop="openEditIngr(i)">編輯</button>
+            </div>
+            <div v-if="bobaList.length === 0" class="ingr-empty">尚無包餡湯圓口味</div>
+          </div>
         </div>
+
       </div>
-    </div>
+    </template>
 
     <!-- ── Editor modal ── -->
     <div v-if="editing && draft" class="modal-backdrop" @click="editing = null">
@@ -284,6 +360,46 @@ function handleDelete(id) {
           <button class="btn-primary" :disabled="!draft.name" @click="handleSave">儲存</button>
         </footer>
 
+      </div>
+    </div>
+
+    <!-- ── 配料編輯 modal ── -->
+    <div v-if="editingIngr && draftIngr" class="modal-backdrop" @click="editingIngr = null">
+      <div class="edit-modal edit-modal--sm" @click.stop>
+        <header class="edit-head">
+          <h2>{{ editingIngr.isNew ? '新增配料' : '編輯配料' }}</h2>
+          <button class="modal-close" style="position:static" @click="editingIngr = null">×</button>
+        </header>
+        <div class="edit-body edit-body--col">
+          <label class="field">
+            <span class="field-label">名稱</span>
+            <input :value="draftIngr.name" @input="draftIngr = { ...draftIngr, name: $event.target.value }" placeholder="例如：紅豆" />
+          </label>
+          <label class="field">
+            <span class="field-label">類別</span>
+            <select :value="draftIngr.group" @change="draftIngr = { ...draftIngr, group: $event.target.value }">
+              <option value="regular">一般選料</option>
+              <option value="boba">包餡湯圓口味</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">顏色</span>
+            <div class="color-swatches">
+              <button
+                v-for="c in COLOR_PALETTE" :key="c"
+                class="swatch" :class="{ active: draftIngr.color === c }"
+                :style="{ background: c }"
+                @click="draftIngr = { ...draftIngr, color: c }"
+              />
+            </div>
+          </label>
+        </div>
+        <footer class="edit-foot">
+          <button v-if="!editingIngr.isNew" class="btn-danger" @click="deleteIngr(draftIngr.id)">刪除</button>
+          <div class="foot-spacer" />
+          <button class="btn-ghost" @click="editingIngr = null">取消</button>
+          <button class="btn-primary" :disabled="!draftIngr.name" @click="saveIngr">儲存</button>
+        </footer>
       </div>
     </div>
 

@@ -88,14 +88,44 @@ watch(totalBobaSlots, max => {
 const showAddons = ref(false)
 const addons = ref({})
 
-function bumpAddon(id, group, delta) {
+function bumpAddon(id, delta) {
   const cur    = { ...addons.value }
   const curQty = cur[id]?.qty ?? 0
   const next   = Math.max(0, curQty + delta)
   if (next === 0) delete cur[id]
-  else cur[id] = { id, group, qty: next }
+  else cur[id] = { id, qty: next }
   addons.value = cur
 }
+
+// ── 加料包餡湯圓 state ───────────────────────────────────────────────
+const addonBobaQty          = ref(0)
+const addonBobaFlavorHistory = ref([])
+const addonBobaFlavorSlots   = computed(() => addonBobaQty.value * 2)
+const addonBobaFlavorCounts  = computed(() => {
+  const c = {}
+  addonBobaFlavorHistory.value.forEach(id => { c[id] = (c[id] || 0) + 1 })
+  return c
+})
+
+function bumpAddonBoba(delta) {
+  addonBobaQty.value = Math.max(0, addonBobaQty.value + delta)
+}
+function addAddonBobaFlavor(id) {
+  const next = [...addonBobaFlavorHistory.value, id]
+  if (next.length > addonBobaFlavorSlots.value) next.shift()
+  addonBobaFlavorHistory.value = next
+}
+function removeAddonBobaFlavor(id) {
+  const next = [...addonBobaFlavorHistory.value]
+  const idx  = next.lastIndexOf(id)
+  if (idx !== -1) next.splice(idx, 1)
+  addonBobaFlavorHistory.value = next
+}
+
+watch(addonBobaFlavorSlots, max => {
+  if (addonBobaFlavorHistory.value.length > max)
+    addonBobaFlavorHistory.value = max > 0 ? addonBobaFlavorHistory.value.slice(-max) : []
+})
 
 // ── 數量 & 備註 ─────────────────────────────────────────────────────
 const qty  = ref(1)
@@ -104,8 +134,8 @@ const note = ref('')
 // ── 定價計算 ────────────────────────────────────────────────────────
 const addonList    = computed(() => Object.values(addons.value))
 const addonDelta   = computed(() =>
-  addonList.value.reduce((sum, a) =>
-    sum + a.qty * (a.group === 'boba' ? props.rules.addonBoba : props.rules.addonRegular), 0)
+  addonList.value.reduce((sum, a) => sum + a.qty * props.rules.addonRegular, 0)
+  + addonBobaQty.value * props.rules.addonBoba
 )
 const upgradeDelta = computed(() => upgradedBobas.value * props.rules.upgradeBoba)
 const lineUnit     = computed(() => props.product.price + addonDelta.value + upgradeDelta.value)
@@ -126,25 +156,28 @@ function handleAdd() {
     }).filter(Boolean)
 
   emit('add', {
-    uid:           'L' + Date.now() + Math.floor(Math.random() * 1000),
-    pid:           props.product.id,
-    name:          props.product.name,
-    color:         props.product.color,
-    selects:       selectsList,
-    bobaFlavors:   bobaFlavorList,
-    upgradedBobas: upgradedBobas.value,
-    upgradeDelta:  upgradeDelta.value,
-    addons:        addonList.value.map(a => {
+    uid:             'L' + Date.now() + Math.floor(Math.random() * 1000),
+    pid:             props.product.id,
+    name:            props.product.name,
+    color:           props.product.color,
+    selects:         selectsList,
+    bobaFlavors:     bobaFlavorList,
+    upgradedBobas:   upgradedBobas.value,
+    upgradeDelta:    upgradeDelta.value,
+    addons:          addonList.value.map(a => {
       const ing = props.ingredients.find(i => i.id === a.id)
-      return {
-        id: a.id, name: ing?.name, qty: a.qty, group: a.group,
-        delta: a.qty * (a.group === 'boba' ? props.rules.addonBoba : props.rules.addonRegular),
-      }
+      return { id: a.id, name: ing?.name, qty: a.qty, delta: a.qty * props.rules.addonRegular }
     }),
-    qty:       qty.value,
-    unitPrice: lineUnit.value,
-    total:     lineTotal.value,
-    note:      note.value,
+    addonBobaQty:    addonBobaQty.value,
+    addonBobaFlavors: addonBobaFlavorHistory.value.map(id => {
+      const ing = props.ingredients.find(i => i.id === id)
+      return ing ? { id: ing.id, name: ing.name } : null
+    }).filter(Boolean),
+    addonBobaDelta:  addonBobaQty.value * props.rules.addonBoba,
+    qty:             qty.value,
+    unitPrice:       lineUnit.value,
+    total:           lineTotal.value,
+    note:            note.value,
   })
 }
 </script>
@@ -252,12 +285,50 @@ function handleAdd() {
           <button class="mod-group-toggle" @click="showAddons = !showAddons">
             <span class="mod-group-label">加料區</span>
             <span class="mod-hint addon-hint">
-              一般 +${{ rules.addonRegular }}/份 · 包餡湯圓 +${{ rules.addonBoba }}/份
+              包餡湯圓 +${{ rules.addonBoba }}/份 · 一般 +${{ rules.addonRegular }}/份
             </span>
             <span class="toggle-arrow" :class="{ open: showAddons }">▾</span>
           </button>
 
           <template v-if="showAddons">
+            <!-- 包餡湯圓加料（優先顯示） -->
+            <div class="addon-boba-block">
+              <div class="addon-boba-head">
+                <span class="addon-boba-label">包餡湯圓</span>
+                <span class="addon-boba-price">+${{ rules.addonBoba }} / 份 · 每份選 2 種口味</span>
+              </div>
+              <div class="addon-boba-stepper">
+                <button class="addon-boba-btn" :disabled="addonBobaQty === 0" @click="bumpAddonBoba(-1)">−</button>
+                <span class="addon-boba-num">{{ addonBobaQty }}</span>
+                <button class="addon-boba-btn" @click="bumpAddonBoba(+1)">＋</button>
+                <span class="addon-boba-total" v-if="addonBobaQty > 0">
+                  = +${{ addonBobaQty * rules.addonBoba }}
+                </span>
+              </div>
+              <div v-if="addonBobaQty > 0" class="addon-boba-flavor">
+                <div class="addon-boba-flavor-hint">
+                  選口味 {{ addonBobaFlavorHistory.length }}/{{ addonBobaFlavorSlots }} 顆
+                </div>
+                <div class="opt-row">
+                  <div v-for="o in bobaPool" :key="o.id" class="select-chip-wrap">
+                    <button
+                      class="opt-chip"
+                      :class="{ active: addonBobaFlavorCounts[o.id] > 0 }"
+                      :disabled="addonBobaFlavorHistory.length >= addonBobaFlavorSlots && !addonBobaFlavorCounts[o.id]"
+                      @click="addAddonBobaFlavor(o.id)"
+                    >
+                      <span class="opt-dot" :style="{ background: o.color }" />
+                      {{ o.name }}
+                      <button v-if="addonBobaFlavorCounts[o.id] > 0" class="chip-dec" @click.stop="removeAddonBobaFlavor(o.id)">×</button>
+                    </button>
+                    <span v-if="addonBobaFlavorCounts[o.id] > 0" class="chip-badge">{{ addonBobaFlavorCounts[o.id] }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 一般加料 -->
+            <div class="addon-divider"><span>一般加料</span></div>
             <div class="addon-grid">
               <div
                 v-for="o in regularPool" :key="o.id"
@@ -269,27 +340,9 @@ function handleAdd() {
                   <span class="addon-delta">+${{ rules.addonRegular }}</span>
                 </div>
                 <div class="addon-qty">
-                  <button :disabled="!(addons[o.id]?.qty)" @click="bumpAddon(o.id, 'regular', -1)">−</button>
+                  <button :disabled="!(addons[o.id]?.qty)" @click="bumpAddon(o.id, -1)">−</button>
                   <span>{{ addons[o.id]?.qty ?? 0 }}</span>
-                  <button @click="bumpAddon(o.id, 'regular', +1)">＋</button>
-                </div>
-              </div>
-            </div>
-            <div class="addon-divider"><span>包餡湯圓</span></div>
-            <div class="addon-grid">
-              <div
-                v-for="o in bobaPool" :key="o.id"
-                class="addon-row" :class="{ active: (addons[o.id]?.qty ?? 0) > 0 }"
-              >
-                <span class="addon-dot" :style="{ background: o.color }" />
-                <div class="addon-meta">
-                  <span class="addon-name">{{ o.name }}</span>
-                  <span class="addon-delta">+${{ rules.addonBoba }} / 2 顆</span>
-                </div>
-                <div class="addon-qty">
-                  <button :disabled="!(addons[o.id]?.qty)" @click="bumpAddon(o.id, 'boba', -1)">−</button>
-                  <span>{{ addons[o.id]?.qty ?? 0 }}</span>
-                  <button @click="bumpAddon(o.id, 'boba', +1)">＋</button>
+                  <button @click="bumpAddon(o.id, +1)">＋</button>
                 </div>
               </div>
             </div>

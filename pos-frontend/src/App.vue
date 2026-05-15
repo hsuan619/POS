@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { CATEGORIES, INGREDIENTS, MODIFIER_RULES } from './data/seed.js'
-import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchOrders, createOrder, refundOrder, getToken, clearToken } from './api/index.js'
+import { CATEGORIES, MODIFIER_RULES } from './data/seed.js'
+import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchIngredients, createIngredient, updateIngredient, deleteIngredient, fetchOrders, createOrder, refundOrder, getToken, clearToken } from './api/index.js'
 import OrderScreen    from './components/OrderScreen.vue'
 import HistoryScreen  from './components/HistoryScreen.vue'
 import ReportScreen   from './components/ReportScreen.vue'
@@ -12,9 +12,10 @@ import LoginScreen    from './components/LoginScreen.vue'
 const authed      = ref(!!getToken())
 const view        = ref('order')
 const drawerOpen  = ref(false)
-const products = ref([])
-const orders   = ref([])
-const loading  = ref(true)
+const products    = ref([])
+const orders      = ref([])
+const ingredients = ref([])
+const loading     = ref(true)
 
 const NAV = [
   { id: 'order',    label: '點餐', icon: '◐' },
@@ -27,9 +28,10 @@ const NAV = [
 async function loadData() {
   loading.value = true
   try {
-    const [prods, ords] = await Promise.all([fetchProducts(), fetchOrders()])
-    products.value = prods
-    orders.value   = ords
+    const [prods, ords, ingrs] = await Promise.all([fetchProducts(), fetchOrders(), fetchIngredients()])
+    products.value    = prods
+    orders.value      = ords
+    ingredients.value = ingrs
   } catch {
     authed.value = false
   } finally {
@@ -64,7 +66,10 @@ async function handleCheckout(payload) {
       selects:       l.selects?.map(s => s.name)     ?? [],
       bobaFlavors:   l.bobaFlavors?.map(f => f.name) ?? [],
       upgradedBobas: l.upgradedBobas ?? 0,
-      addons:        l.addons?.map(a => ({ name: a.name, qty: a.qty, price: a.delta })) ?? [],
+      addons: [
+        ...(l.addons?.map(a => ({ name: a.name, qty: a.qty, price: a.delta })) ?? []),
+        ...(l.addonBobaQty > 0 ? [{ name: '包餡湯圓加料', qty: l.addonBobaQty, price: l.addonBobaDelta }] : []),
+      ],
       note:          l.note ?? '',
     })),
     subtotal: payload.subtotal,
@@ -108,6 +113,35 @@ async function handleProductsUpdate(newList) {
   }
 }
 
+// ── 配料管理 ──────────────────────────────────────────────────────
+async function handleIngredientsUpdate(newList) {
+  // 刪除
+  const deleted = ingredients.value.find(i => !newList.find(n => n.id === i.id))
+  if (deleted) {
+    await deleteIngredient(deleted.id)
+    ingredients.value = ingredients.value.filter(i => i.id !== deleted.id)
+    return
+  }
+  // 新增（isNew flag）
+  const added = newList.find(i => i.isNew)
+  if (added) {
+    const { isNew, id, ...data } = added
+    const saved = await createIngredient(data)
+    ingredients.value = [...ingredients.value, saved]
+    return
+  }
+  // 更新
+  const changed = newList.find(i => {
+    const old = ingredients.value.find(o => o.id === i.id)
+    return old && JSON.stringify(old) !== JSON.stringify(i)
+  })
+  if (changed) {
+    const { id, ...data } = changed
+    const saved = await updateIngredient(id, data)
+    ingredients.value = ingredients.value.map(i => i.id === saved.id ? saved : i)
+  }
+}
+
 // ── 退款：金額歸零、狀態改 refunded ──────────────────────────────
 async function handleRefund(mongoId) {
   const updated = await refundOrder(mongoId)
@@ -142,10 +176,10 @@ async function handleRefund(mongoId) {
       </nav>
 
       <div class="topnav-user">
-        <div class="user-avatar">阿</div>
+        <div class="user-avatar">水</div>
         <div>
-          <div class="user-name">阿芳</div>
-          <div class="user-role">店長 · 09:00–17:00</div>
+          <div class="user-name">阿水</div>
+          <div class="user-role">店長 · 13:00–20:30</div>
         </div>
         <button class="logout-btn" @click="handleLogout" title="登出">⏻</button>
       </div>
@@ -180,10 +214,10 @@ async function handleRefund(mongoId) {
         </button>
       </div>
       <div class="drawer-user">
-        <div class="user-avatar">阿</div>
+        <div class="user-avatar">水</div>
         <div>
-          <div class="user-name">阿芳</div>
-          <div class="user-role">店長 · 09:00–17:00</div>
+          <div class="user-name">阿水</div>
+          <div class="user-role">店長 · 13:00–20:30</div>
         </div>
         <button class="logout-btn" @click="handleLogout">⏻</button>
       </div>
@@ -201,7 +235,7 @@ async function handleRefund(mongoId) {
           :products="products"
           :orders="orders"
           :categories="CATEGORIES"
-          :ingredients="INGREDIENTS"
+          :ingredients="ingredients"
           :rules="MODIFIER_RULES"
           card-size="large"
           @checkout="handleCheckout"
@@ -212,7 +246,9 @@ async function handleRefund(mongoId) {
           v-else-if="view === 'products'"
           :products="products"
           :categories="CATEGORIES"
+          :ingredients="ingredients"
           @update:products="handleProductsUpdate"
+          @update:ingredients="handleIngredientsUpdate"
         />
         <AccountingScreen v-else-if="view === 'accounting'" />
       </template>

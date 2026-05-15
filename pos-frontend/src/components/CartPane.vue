@@ -103,6 +103,18 @@ function modSummary(line) {
     parts.push('加料：' + text)
   }
 
+  if (line.addonBobaQty > 0) {
+    let bobaText = `包餡湯圓加料 ×${line.addonBobaQty}`
+    if (line.addonBobaFlavors?.length) {
+      const counts = {}
+      line.addonBobaFlavors.forEach(f => { counts[f.name] = (counts[f.name] || 0) + 1 })
+      const flavText = Object.entries(counts)
+        .map(([name, n]) => n > 1 ? `${name} ×${n}` : name).join('、')
+      bobaText += `（${flavText}）`
+    }
+    parts.push(bobaText)
+  }
+
   return parts.join(' · ') || null
 }
 

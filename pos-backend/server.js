@@ -26,11 +26,12 @@ function requireAuth(req, res, next) {
   next()
 }
 
-app.use('/api/products',  requireAuth, require('./routes/products'))
-app.use('/api/orders',    requireAuth, require('./routes/orders'))
-app.use('/api/reports',   requireAuth, require('./routes/reports'))
-app.use('/api/purchases', requireAuth, require('./routes/purchases'))
-app.use('/api/expenses',  requireAuth, require('./routes/expenses'))
+app.use('/api/products',    requireAuth, require('./routes/products'))
+app.use('/api/ingredients', requireAuth, require('./routes/ingredients'))
+app.use('/api/orders',      requireAuth, require('./routes/orders'))
+app.use('/api/reports',     requireAuth, require('./routes/reports'))
+app.use('/api/purchases',   requireAuth, require('./routes/purchases'))
+app.use('/api/expenses',    requireAuth, require('./routes/expenses'))
 
 app.use((err, req, res, next) => {
   console.error(err)
